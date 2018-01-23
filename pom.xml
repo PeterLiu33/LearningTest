@@ -12,6 +12,7 @@
         <module>lt-java</module>
         <module>lt-common</module>
         <module>lt-web</module>
+        <module>lt-zk</module>
     </modules>
 
     <properties>
@@ -29,8 +30,31 @@
         <pandora-boot-maven-plugin.version>2.1.6.2</pandora-boot-maven-plugin.version>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>3.4.10</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper-test</artifactId>
+                <version>3.4.0</version>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
