@@ -26,10 +26,13 @@ public class TestCompletableFuture {
         System.out.println(((ForkJoinPool)Executors.newWorkStealingPool()).submit(new Add(1,40)).join());
     }
 
+    /**
+     * 递归分治性能其实不如循环
+     */
     @Test
     public void testFibnacci(){
-        Integer result = ((ForkJoinPool) Executors.newWorkStealingPool()).submit(new Fibnacci(20)).join();
-        Assert.assertEquals(new Integer(6765), result);
+        Long result = ((ForkJoinPool) Executors.newWorkStealingPool()).submit(new Fibnacci(500)).join();
+        Assert.assertEquals(new Long(2171430676560690477L), result);
     }
 
     // 分治求取1+2+3+4的和
@@ -39,6 +42,7 @@ public class TestCompletableFuture {
         private int start;
         @Getter
         private int end;
+        // 确定分治的粒度
         private static final int MAX_RECURSIVE_SIZE = 3;
 
         public Add(int start, int end){
@@ -68,13 +72,15 @@ public class TestCompletableFuture {
     }
 
     // 分治求取Fibnacci序列值，给定序号，求取当前序位的Fibnacci值
-    public static class Fibnacci extends RecursiveTask<Integer>{
+    public static class Fibnacci extends RecursiveTask<Long>{
 
         // 存储结果
         @Getter
-        private volatile int result = 0;
+        private volatile long result = 0;
         // 初始化序列
         private int seq;
+        // 确定分治的粒度：如果问题的大小是小于既定的大小，你直接在任务中解决这问题。
+        public static int DIVIDE_AND_CONQUER_SIZE = 499;
 
         public Fibnacci(int seq){
             if(seq < 0){
@@ -83,10 +89,11 @@ public class TestCompletableFuture {
             this.seq = seq;
         }
 
+        // 采用多线程FJ框架分治
         @Override
-        protected Integer compute() {
-            if(seq <= 1){
-                result += seq;
+        protected Long compute() {
+            if(seq <= DIVIDE_AND_CONQUER_SIZE){
+                result += runFib2(seq);
                 return result;
             }else{
                 Fibnacci left = new Fibnacci(seq - 1);
@@ -101,6 +108,28 @@ public class TestCompletableFuture {
 //                result += right.join();
                 return result;
             }
+        }
+
+        // 采用单线程递归
+        private long runFib(long seq){
+            if(seq <= 1){
+                return seq;
+            }else {
+                return runFib(seq - 1) + runFib(seq - 2);
+            }
+        }
+
+        // 采用循环
+        private long runFib2(long seq){
+            long left = 0;
+            long right = 1;
+            long temp;
+            for(long i=2;i <=seq; i++){
+                temp = right;
+                right = left + right;
+                left = temp;
+            }
+            return right;
         }
     }
 
