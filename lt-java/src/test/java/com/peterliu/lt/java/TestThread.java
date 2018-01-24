@@ -14,7 +14,7 @@ import java.io.PrintWriter;
  */
 public class TestThread {
 
-    // 有高优先级的线程们比低优先级的先结束
+    //线程计算的乘法表, 有高优先级的线程们比低优先级的先结束
     @Test
     public void testCalculator() {
         Thread threads[] = new Thread[10];
