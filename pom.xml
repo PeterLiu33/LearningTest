@@ -16,6 +16,7 @@
         <module>lt-netty</module>
         <module>lt-others</module>
         <module>lt-guava</module>
+        <module>lt-junit</module>
     </modules>
 
     <properties>
@@ -34,6 +35,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.peterliu.demo</groupId>
+            <artifactId>lt-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
