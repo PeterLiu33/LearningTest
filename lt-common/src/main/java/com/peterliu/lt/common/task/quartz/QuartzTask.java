@@ -226,6 +226,7 @@ public abstract class QuartzTask extends DefaultTask {
         this.readLock().lock();
         try {
             this.scheduler.shutdown();
+            runStatus = this.scheduler.isShutdown();
             log.info(String.format("QuartzSchedulerHasForceShutDown, Name:[%s]", this.scheduler.getSchedulerName()));
         } catch (SchedulerException e) {
             // 关闭失败
@@ -239,6 +240,30 @@ public abstract class QuartzTask extends DefaultTask {
             this.readLock().unlock();
         }
         return this.finished = runStatus;
+    }
+
+    @Override
+    public void end() {
+        Asserts.isNotBlank(this.scheduler, "PleaseMakeSureTaskIsInitialized!");
+        boolean runStatus = true;
+        this.readLock().lock();
+        try {
+            // 等待Job执行完毕
+            this.scheduler.shutdown(true);
+            runStatus = this.scheduler.isShutdown();
+            log.info(String.format("QuartzSchedulerHasForceShutDown, Name:[%s]", this.scheduler.getSchedulerName()));
+        } catch (SchedulerException e) {
+            // 关闭失败
+            runStatus = false;
+            try {
+                log.error(String.format("QuartzSchedulerHasFailedToForceShutDown, Name:[%s]", this.scheduler.getSchedulerName()), e);
+            } catch (SchedulerException e1) {
+                log.error(String.format("QuartzSchedulerHasFailedToForceShutDown, Task:[%s]", getName()), e1);
+            }
+        } finally {
+            this.readLock().unlock();
+        }
+        this.finished = runStatus;
     }
 
     /**

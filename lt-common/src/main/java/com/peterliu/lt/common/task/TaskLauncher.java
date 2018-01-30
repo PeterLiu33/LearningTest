@@ -53,6 +53,18 @@ public abstract class TaskLauncher {
         return true;
     }
 
+    /**
+     * 只设置结束标志，并不会强制中断
+     *
+     * @param task
+     * @return
+     */
+    public static boolean shutDown(Task task){
+        Asserts.isTrue(task instanceof DefaultTask, "Task Should Be InstanceOf Class DefaultTask");
+        ((DefaultTask) task).end();
+        return true;
+    }
+
     static {
         // 启动更新线程状态的守护线程
         Task task = TaskFactory.createSelfLoop(3, -1, -1);
