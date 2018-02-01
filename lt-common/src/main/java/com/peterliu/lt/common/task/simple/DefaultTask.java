@@ -201,20 +201,20 @@ public abstract class DefaultTask implements Task {
                     } finally {
                         // 程序结束
                         DefaultTask.this.finished = true;
-                        DefaultTask.this.clearStatus();
+//                        DefaultTask.this.clearStatus();
                         if (finalI == 0) {
                             DefaultTask.this.notifyStop();
                         }
                     }
                 }
             });
+            thread.start();
             this.writeLock().lock();
             try {
                 this.setThread(i, thread);
             } finally {
                 this.writeLock().unlock();
             }
-            thread.start();
         }
     }
 
