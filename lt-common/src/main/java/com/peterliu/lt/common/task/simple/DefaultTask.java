@@ -40,14 +40,11 @@ public abstract class DefaultTask implements Task {
     // 任务启动延时，默认没有延时
     protected int startDelay = 0;
     // 任务启动线程池
-    private volatile Thread threads[] = new Thread[threadSize];
-    private volatile AtomicReferenceArray<Thread> atomicReferenceThreads = new AtomicReferenceArray<Thread>(threads);
+    private volatile AtomicReferenceArray<Thread> threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
     // 任务启动线程池状态
-    protected volatile Thread.State status[] = new Thread.State[threadSize];
-    protected volatile AtomicReferenceArray<Thread.State> atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(status);
+    protected volatile AtomicReferenceArray<Thread.State> status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
     // 线程启动时间，单位毫秒
-    protected volatile Long startTime[] = new Long[threadSize];
-    protected volatile AtomicReferenceArray<Long> atomicReferenceStartTime = new AtomicReferenceArray<Long>(startTime);
+    protected volatile AtomicReferenceArray<Long> startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
     // 是否允许并发调用, 默认允许
     protected volatile boolean allowConcurrentRun = true;
     // 并发调用锁
@@ -125,7 +122,11 @@ public abstract class DefaultTask implements Task {
 
     @Override
     public Thread.State[] getStatus() {
-        return this.status;
+        Thread.State temp[] = new Thread.State[this.threadSize];
+        for (int i = 0; i < this.threadSize; i++) {
+            temp[i] = this.status.get(i);
+        }
+        return temp;
     }
 
     @Override
@@ -165,7 +166,7 @@ public abstract class DefaultTask implements Task {
                                 // 设置启动时间，用于超时判断
                                 DefaultTask.this.writeLock().lock();
                                 try {
-                                    DefaultTask.this.atomicReferenceStartTime.set(finalI, System.currentTimeMillis());
+                                    DefaultTask.this.startTime.set(finalI, System.currentTimeMillis());
                                 } finally {
                                     DefaultTask.this.writeLock().unlock();
                                 }
@@ -272,8 +273,8 @@ public abstract class DefaultTask implements Task {
             this.readLock().lock();
             try {
                 for (int i = 0; i < this.threadSize; i++) {
-                    if (this.getThread(i) != null && this.atomicReferenceStartTime.get(i) != null) {
-                        if (System.currentTimeMillis() - this.atomicReferenceStartTime.get(i) > this.timeOut) {
+                    if (this.getThread(i) != null && this.startTime.get(i) != null) {
+                        if (System.currentTimeMillis() - this.startTime.get(i) > this.timeOut) {
                             // 超时
                             return true;
                         }
@@ -294,7 +295,7 @@ public abstract class DefaultTask implements Task {
         try {
             for (int i = 0; i < this.threadSize; i++) {
                 if (this.getThread(i) != null) {
-                    this.atomicReferenceStatus.set(i, this.getThread(i).getState());
+                    this.status.set(i, this.getThread(i).getState());
                 }
             }
         } finally {
@@ -314,12 +315,9 @@ public abstract class DefaultTask implements Task {
                 this.writeLock().lock();
                 try {
                     this.threadSize = threadSize;
-                    this.threads = new Thread[threadSize];
-                    this.atomicReferenceThreads = new AtomicReferenceArray<Thread>(this.threads);
-                    this.startTime = new Long[threadSize];
-                    this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
-                    this.status = new Thread.State[threadSize];
-                    this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
+                    this.threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
+                    this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
+                    this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
                 } finally {
                     this.writeLock().unlock();
                 }
@@ -335,12 +333,9 @@ public abstract class DefaultTask implements Task {
     public void clearStatus() {
         this.writeLock().lock();
         try {
-            this.threads = new Thread[threadSize];
-            this.atomicReferenceThreads = new AtomicReferenceArray<Thread>(this.threads);
-            this.startTime = new Long[threadSize];
-            this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
-            this.status = new Thread.State[threadSize];
-            this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
+            this.threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
+            this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
+            this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
         } finally {
             this.writeLock().unlock();
         }
@@ -356,7 +351,7 @@ public abstract class DefaultTask implements Task {
         Asserts.isTrue(index >= 0 && index < this.threadSize, "[%d]indexIsIllegal!", index);
         readLock().lock();
         try {
-            return this.atomicReferenceThreads.get(index);
+            return this.threads.get(index);
         } finally {
             readLock().unlock();
         }
@@ -395,14 +390,14 @@ public abstract class DefaultTask implements Task {
     private Long getStartTime(int index) {
         readLock().lock();
         try {
-            return this.atomicReferenceStartTime.get(index);
+            return this.startTime.get(index);
         } finally {
             readLock().unlock();
         }
     }
 
     private void setThread(int index, Thread thread) {
-        this.atomicReferenceThreads.set(index, thread);
+        this.threads.set(index, thread);
     }
 
     // 读写锁

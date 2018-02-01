@@ -78,6 +78,7 @@ public abstract class TaskLauncher {
         DefaultTask defaultTask = (DefaultTask) task;
         for (int i = 0; i < defaultTask.getThreadSize(); i++) {
             Thread thread = defaultTask.getThread(i);
+//            if(thread == null) {i--;continue;}
             thread.join();
         }
     }
