@@ -83,6 +83,18 @@ public abstract class TaskLauncher {
         }
     }
 
+    /**
+     * 只有simple类型的才能使用
+     *
+     * @param tasks
+     * @throws InterruptedException
+     */
+    public static void join(Task... tasks) throws InterruptedException {
+        for (Task task : tasks) {
+            join(task);
+        }
+    }
+
     static {
         // 启动更新线程状态的守护线程
         Task task = TaskFactory.createSelfLoop(3, -1, -1);
