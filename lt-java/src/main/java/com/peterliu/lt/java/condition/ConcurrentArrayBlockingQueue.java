@@ -1,6 +1,5 @@
 package com.peterliu.lt.java.condition;
 
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -8,6 +7,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * 类似与LinkedBlockingQueue，不同之处在于：
+ * 1. 不支持迭代，以及少了部分方法，比如add、remove等
+ * 2. 存储不是链表结构，而是参考了ArrayBlockingQueue，使用了数组，用于节省空间
+ * <p>
+ * 该类可以认为是ArrayBlockingQueue和LinkedBlockingQueue的结合，即支持并行读写，也使用array缩减队列空间花费。
  * <p>
  * Created by liujun on 2018/2/1.
  */
