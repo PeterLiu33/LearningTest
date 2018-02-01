@@ -13,6 +13,7 @@ import org.quartz.listeners.SchedulerListenerSupport;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -29,9 +30,11 @@ public abstract class QuartzTask extends DefaultTask {
     private static final String QUARTZ_TRIGGER_PREFIX = "quartz_trigger_";
 
     // 任务列表
-    protected volatile JobDetail jobDetail = null;
-    protected volatile Boolean triggerFinished[] = new Boolean[threadSize];
-    public volatile Trigger triggers[] = new Trigger[threadSize];
+    public volatile JobDetail jobDetail = null;
+    private volatile Boolean triggerFinished[] = new Boolean[threadSize];
+    protected volatile AtomicReferenceArray<Boolean> atomicReferenceTriggerFinished = new AtomicReferenceArray<Boolean>(this.triggerFinished);
+    private volatile Trigger triggers[] = new Trigger[threadSize];
+    protected volatile AtomicReferenceArray<Trigger> atomicReferenceTrigger = new AtomicReferenceArray<Trigger>(this.triggers);
     // 商业节假日期
     private Set<Date> holidaySet = Sets.newHashSet();
     // 调度器
@@ -151,11 +154,11 @@ public abstract class QuartzTask extends DefaultTask {
                     String index = StringUtils.substringAfter(name, "#");
                     Integer integer = Integer.valueOf(index);
                     if (integer != null) {
-                        QuartzTask.this.triggerFinished[integer] = true;
+                        QuartzTask.this.atomicReferenceTriggerFinished.set(integer ,true);
                     }
                     boolean temp = true;
-                    for (Boolean status : QuartzTask.this.triggerFinished) {
-                        temp = temp && status;
+                    for (int i = 0; i < atomicReferenceTriggerFinished.length(); i++) {
+                        temp = temp && atomicReferenceTriggerFinished.get(i);
                     }
                     QuartzTask.this.finished = temp;
                 }
@@ -165,11 +168,11 @@ public abstract class QuartzTask extends DefaultTask {
             // 启动服务
             scheduler.start();
             Date endDate = null;
-            if(this.timeOut > 0){
+            if (this.timeOut > 0) {
                 // 增加结束时间
-                if(this.startDelay > 0){
+                if (this.startDelay > 0) {
                     endDate = new Date(System.currentTimeMillis() + this.startDelay + this.timeOut);
-                }else {
+                } else {
                     endDate = new Date(System.currentTimeMillis() + this.timeOut);
                 }
             }
@@ -197,12 +200,12 @@ public abstract class QuartzTask extends DefaultTask {
                 this.writeLock().lock();
                 try {
                     this.jobDetail = jobDetail;
-                    this.triggers[i] = trigger;
+                    this.atomicReferenceTrigger.set(i, trigger);
                     if (this.startDelay > 0) {
                         // 启动延时
-                        this.startTime[i] = System.currentTimeMillis() + this.startDelay;
+                        this.atomicReferenceStartTime.set(i, System.currentTimeMillis() + this.startDelay);
                     } else {
-                        this.startTime[i] = System.currentTimeMillis();
+                        this.atomicReferenceStartTime.set(i, System.currentTimeMillis());
                     }
                 } finally {
                     this.writeLock().unlock();
@@ -281,12 +284,16 @@ public abstract class QuartzTask extends DefaultTask {
                     this.threadSize = threadSize;
                     this.jobDetail = null;
                     this.triggers = new Trigger[threadSize];
+                    this.atomicReferenceTrigger = new AtomicReferenceArray<Trigger>(this.triggers);
                     this.triggerFinished = new Boolean[threadSize];
+                    this.atomicReferenceTriggerFinished = new AtomicReferenceArray<Boolean>(this.triggerFinished);
                     for (int i = 0; i < this.triggerFinished.length; i++) {
-                        this.triggerFinished[i] = false;
+                        this.atomicReferenceTriggerFinished.set(i, false);
                     }
                     this.startTime = new Long[threadSize];
+                    this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
                     this.status = new Thread.State[threadSize];
+                    this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
                 } finally {
                     this.writeLock().unlock();
                 }
@@ -305,12 +312,16 @@ public abstract class QuartzTask extends DefaultTask {
         try {
             this.jobDetail = null;
             this.triggers = new Trigger[threadSize];
+            this.atomicReferenceTrigger = new AtomicReferenceArray<Trigger>(this.triggers);
             this.triggerFinished = new Boolean[threadSize];
+            this.atomicReferenceTriggerFinished = new AtomicReferenceArray<Boolean>(this.triggerFinished);
             for (int i = 0; i < this.triggerFinished.length; i++) {
-                this.triggerFinished[i] = false;
+                this.atomicReferenceTriggerFinished.set(i, false);
             }
             this.startTime = new Long[threadSize];
+            this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
             this.status = new Thread.State[threadSize];
+            this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
         } finally {
             this.writeLock().unlock();
         }
@@ -319,8 +330,8 @@ public abstract class QuartzTask extends DefaultTask {
     @Override
     public Thread.State getStatus(int index) {
         Asserts.isTrue(index < this.threadSize, "[%d]IndexShouldBe[0,%d]", index, this.threadSize);
-        Asserts.isNotBlank(this.triggers[index], "[%d]CurrentTriggerIsEmpty!", index);
-        Trigger trigger = this.triggers[index];
+        Asserts.isNotBlank(this.atomicReferenceTrigger.get(index), "[%d]CurrentTriggerIsEmpty!", index);
+        Trigger trigger = this.atomicReferenceTrigger.get(index);
         try {
             Trigger.TriggerState triggerState = this.scheduler.getTriggerState(trigger.getKey());
             switch (triggerState) {
@@ -348,12 +359,28 @@ public abstract class QuartzTask extends DefaultTask {
         this.writeLock().lock();
         try {
             for (int i = 0; i < this.threadSize; i++) {
-                if (this.triggers[i] != null) {
-                    this.status[i] = getStatus(i);
+                if (this.atomicReferenceTrigger.get(i) != null) {
+                    this.atomicReferenceStatus.set(i, getStatus(i));
                 }
             }
         } finally {
             this.writeLock().unlock();
+        }
+    }
+
+    /**
+     * 获取线程状态
+     *
+     * @param index
+     * @return
+     */
+    public Trigger getTrigger(int index) {
+        Asserts.isTrue(index >= 0 && index < this.threadSize, "[%d]indexIsIllegal!", index);
+        readLock().lock();
+        try {
+            return this.atomicReferenceTrigger.get(index);
+        } finally {
+            readLock().unlock();
         }
     }
 }

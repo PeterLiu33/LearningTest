@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -39,11 +40,14 @@ public abstract class DefaultTask implements Task {
     // 任务启动延时，默认没有延时
     protected int startDelay = 0;
     // 任务启动线程池
-    public volatile Thread threads[] = new Thread[threadSize];
+    private volatile Thread threads[] = new Thread[threadSize];
+    private volatile AtomicReferenceArray<Thread> atomicReferenceThreads = new AtomicReferenceArray<Thread>(threads);
     // 任务启动线程池状态
     protected volatile Thread.State status[] = new Thread.State[threadSize];
+    protected volatile AtomicReferenceArray<Thread.State> atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(status);
     // 线程启动时间，单位毫秒
     protected volatile Long startTime[] = new Long[threadSize];
+    protected volatile AtomicReferenceArray<Long> atomicReferenceStartTime = new AtomicReferenceArray<Long>(startTime);
     // 是否允许并发调用, 默认允许
     protected volatile boolean allowConcurrentRun = true;
     // 并发调用锁
@@ -115,8 +119,8 @@ public abstract class DefaultTask implements Task {
     @Override
     public Thread.State getStatus(int index) {
         Asserts.isTrue(index < this.threadSize, "[%d]IndexShouldBe[0,%d]", index, this.threadSize);
-        Asserts.isNotBlank(this.threads[index], "[%d]CurrentThreadIsEmpty!", index);
-        return this.threads[index].getState();
+        Asserts.isNotBlank(this.getThread(index), "[%d]CurrentThreadIsEmpty!", index);
+        return this.getThread(index).getState();
     }
 
     @Override
@@ -161,23 +165,23 @@ public abstract class DefaultTask implements Task {
                                 // 设置启动时间，用于超时判断
                                 DefaultTask.this.writeLock().lock();
                                 try {
-                                    DefaultTask.this.startTime[finalI] = System.currentTimeMillis();
+                                    DefaultTask.this.atomicReferenceStartTime.set(finalI, System.currentTimeMillis());
                                 } finally {
                                     DefaultTask.this.writeLock().unlock();
                                 }
                                 // 执行真正的业务逻辑
-                                if(finalI == 0) {
+                                if (finalI == 0) {
                                     DefaultTask.this.notifyStart();
                                 }
-                                if(!DefaultTask.this.allowConcurrentRun){
+                                if (!DefaultTask.this.allowConcurrentRun) {
                                     // 不允许并发调用
                                     DefaultTask.this.lock.lock();
-                                    try{
+                                    try {
                                         DefaultTask.this.run(finalI);
-                                    }finally {
+                                    } finally {
                                         DefaultTask.this.lock.unlock();
                                     }
-                                }else{
+                                } else {
                                     // 允许并发调用
                                     DefaultTask.this.run(finalI);
                                 }
@@ -193,11 +197,11 @@ public abstract class DefaultTask implements Task {
                                 }
                             }
                         }
-                    }finally {
+                    } finally {
                         // 程序结束
                         DefaultTask.this.finished = true;
                         DefaultTask.this.clearStatus();
-                        if(finalI == 0) {
+                        if (finalI == 0) {
                             DefaultTask.this.notifyStop();
                         }
                     }
@@ -205,7 +209,7 @@ public abstract class DefaultTask implements Task {
             });
             this.writeLock().lock();
             try {
-                threads[i] = thread;
+                this.setThread(i, thread);
             } finally {
                 this.writeLock().unlock();
             }
@@ -222,7 +226,8 @@ public abstract class DefaultTask implements Task {
         boolean runStatus = true;
         this.readLock().lock();
         try {
-            for (Thread thread : threads) {
+            for (int i = 0; i < this.threadSize; i++) {
+                Thread thread = this.getThread(i);
                 if (thread != null) {
                     try {
                         thread.interrupt();
@@ -267,8 +272,8 @@ public abstract class DefaultTask implements Task {
             this.readLock().lock();
             try {
                 for (int i = 0; i < this.threadSize; i++) {
-                    if (this.threads[i] != null && this.startTime[i] != null) {
-                        if (System.currentTimeMillis() - this.startTime[i] > this.timeOut) {
+                    if (this.getThread(i) != null && this.atomicReferenceStartTime.get(i) != null) {
+                        if (System.currentTimeMillis() - this.atomicReferenceStartTime.get(i) > this.timeOut) {
                             // 超时
                             return true;
                         }
@@ -288,8 +293,8 @@ public abstract class DefaultTask implements Task {
         this.writeLock().lock();
         try {
             for (int i = 0; i < this.threadSize; i++) {
-                if (this.threads[i] != null) {
-                    this.status[i] = this.threads[i].getState();
+                if (this.getThread(i) != null) {
+                    this.atomicReferenceStatus.set(i, this.getThread(i).getState());
                 }
             }
         } finally {
@@ -310,8 +315,11 @@ public abstract class DefaultTask implements Task {
                 try {
                     this.threadSize = threadSize;
                     this.threads = new Thread[threadSize];
+                    this.atomicReferenceThreads = new AtomicReferenceArray<Thread>(this.threads);
                     this.startTime = new Long[threadSize];
+                    this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
                     this.status = new Thread.State[threadSize];
+                    this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
                 } finally {
                     this.writeLock().unlock();
                 }
@@ -328,21 +336,40 @@ public abstract class DefaultTask implements Task {
         this.writeLock().lock();
         try {
             this.threads = new Thread[threadSize];
+            this.atomicReferenceThreads = new AtomicReferenceArray<Thread>(this.threads);
             this.startTime = new Long[threadSize];
+            this.atomicReferenceStartTime = new AtomicReferenceArray<Long>(this.startTime);
             this.status = new Thread.State[threadSize];
+            this.atomicReferenceStatus = new AtomicReferenceArray<Thread.State>(this.status);
         } finally {
             this.writeLock().unlock();
         }
     }
 
-    protected void notifyStart(){
+    /**
+     * 获取线程状态
+     *
+     * @param index
+     * @return
+     */
+    public Thread getThread(int index) {
+        Asserts.isTrue(index >= 0 && index < this.threadSize, "[%d]indexIsIllegal!", index);
+        readLock().lock();
+        try {
+            return this.atomicReferenceThreads.get(index);
+        } finally {
+            readLock().unlock();
+        }
+    }
+
+    protected void notifyStart() {
         executorService.submit(new Runnable() {
             @Override
             public void run() {
                 for (TaskListener listener : DefaultTask.this.taskListeners) {
-                    try{
+                    try {
                         listener.start(DefaultTask.this);
-                    }catch (Exception e){
+                    } catch (Exception e) {
 
                     }
                 }
@@ -350,19 +377,32 @@ public abstract class DefaultTask implements Task {
         });
     }
 
-    protected void notifyStop(){
+    protected void notifyStop() {
         executorService.submit(new Runnable() {
             @Override
             public void run() {
                 for (TaskListener listener : DefaultTask.this.taskListeners) {
-                    try{
+                    try {
                         listener.stop(DefaultTask.this);
-                    }catch (Exception e){
+                    } catch (Exception e) {
 
                     }
                 }
             }
         });
+    }
+
+    private Long getStartTime(int index) {
+        readLock().lock();
+        try {
+            return this.atomicReferenceStartTime.get(index);
+        } finally {
+            readLock().unlock();
+        }
+    }
+
+    private void setThread(int index, Thread thread) {
+        this.atomicReferenceThreads.set(index, thread);
     }
 
     // 读写锁

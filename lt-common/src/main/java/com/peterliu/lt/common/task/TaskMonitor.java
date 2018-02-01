@@ -25,7 +25,7 @@ public class TaskMonitor {
             if(task instanceof QuartzTask){
                 for (int i = 0; i < task.getThreadSize(); i++) {
                     log.append("[" + i + "]: ");
-                    Trigger trigger = ((QuartzTask)task).triggers[i];
+                    Trigger trigger = ((QuartzTask)task).getTrigger(i);
                     if (trigger != null) {
                         log.append(trigger.getKey().getName()).append(" [status]: ").append(task.getStatus(i).name());
                     }
@@ -34,7 +34,7 @@ public class TaskMonitor {
             }else {
                 for (int i = 0; i < task.getThreadSize(); i++) {
                     log.append("[" + i + "]: ");
-                    Thread thread = task.threads[i];
+                    Thread thread = task.getThread(i);
                     if (thread != null) {
                         log.append(thread.getName()).append(" [status]: ").append(thread.getState().name());
                     }

@@ -3,6 +3,7 @@ package com.peterliu.lt.common.task;
 
 import com.peterliu.lt.common.Asserts;
 import com.peterliu.lt.common.DateUtils;
+import com.peterliu.lt.common.task.quartz.QuartzTask;
 import com.peterliu.lt.common.task.simple.DefaultTask;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +64,22 @@ public abstract class TaskLauncher {
         Asserts.isTrue(task instanceof DefaultTask, "Task Should Be InstanceOf Class DefaultTask");
         ((DefaultTask) task).end();
         return true;
+    }
+
+    /**
+     * 只有simple类型的才能使用
+     *
+     * @param task
+     * @throws InterruptedException
+     */
+    public static void join(Task task) throws InterruptedException {
+        Asserts.isFalse(task instanceof QuartzTask, "Task Should Not Be InstanceOf Class QuartzTask");
+        Asserts.isTrue(task instanceof DefaultTask, "Task Should Be InstanceOf Class DefaultTask");
+        DefaultTask defaultTask = (DefaultTask) task;
+        for (int i = 0; i < defaultTask.getThreadSize(); i++) {
+            Thread thread = defaultTask.getThread(i);
+            thread.join();
+        }
     }
 
     static {

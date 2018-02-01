@@ -31,7 +31,7 @@ public class SelfLoopTask extends DefaultTask {
     protected void run(int index) {
         while (!this.isFinished()) {
             if(this.timeOut > 0) {
-                if (System.currentTimeMillis() - this.startTime[index] > this.timeOut) {
+                if (System.currentTimeMillis() - this.atomicReferenceStartTime.get(index) > this.timeOut) {
                     // 超时
                     this.finished = true;
                     break;
