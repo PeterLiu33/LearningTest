@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,10 +28,12 @@ public abstract class DefaultTask implements Task {
     protected String name = this.getClass().getSimpleName();
     // 任务启动线程数, 默认一个
     @Getter
-    protected volatile int threadSize = 1;
+    protected volatile int threadSize = -1;
     // 结束标志位，true-结束
     @Getter
     protected volatile boolean finished = true;
+    // 针对每一个线程的状态
+    protected volatile AtomicReferenceArray<Boolean> allFinished;
     // 任务超时时间，如果小于等于0，则无超时，超时会自动中断
     @Getter
     protected volatile long timeOut = -1;
@@ -40,11 +43,11 @@ public abstract class DefaultTask implements Task {
     // 任务启动延时，默认没有延时
     protected int startDelay = 0;
     // 任务启动线程池
-    private volatile AtomicReferenceArray<Thread> threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
+    private volatile AtomicReferenceArray<Thread> threads;
     // 任务启动线程池状态
-    protected volatile AtomicReferenceArray<Thread.State> status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
+    protected volatile AtomicReferenceArray<Thread.State> status;
     // 线程启动时间，单位毫秒
-    protected volatile AtomicReferenceArray<Long> startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
+    protected volatile AtomicReferenceArray<Long> startTime;
     // 是否允许并发调用, 默认允许
     protected volatile boolean allowConcurrentRun = true;
     // 并发调用锁
@@ -88,7 +91,7 @@ public abstract class DefaultTask implements Task {
 
     @Override
     public Task assignMission(String name, boolean allowConcurrentRun, Runnable runner) {
-        Asserts.isNotBlank(name, "[%d]TaskNameIsEmpty!", name);
+        Asserts.isNotBlank(name, "[%s]TaskNameIsEmpty!", name);
         setName(name);
         this.runner = runner;
         this.daemon = false;
@@ -147,16 +150,22 @@ public abstract class DefaultTask implements Task {
             //线程还在运行，无法再次启动
             return;
         }
-        this.finished = false;
         this.clearStatus();
+        // 设置启动状态
+        this.finished = false;
+        for (int i = 0; i < this.allFinished.length(); i++) {
+            this.allFinished.set(i, false);
+        }
         ThreadFactory threadFactory = new TaskThreadFactory(this);
+        // 是否已经通知
+        AtomicInteger notify = new AtomicInteger(0);
         for (int i = 0; i < threadSize; i++) {
             int finalI = i;
             Thread thread = threadFactory.newThread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        while (!DefaultTask.this.finished) {
+                        while (!DefaultTask.this.allFinished.get(finalI)) {
                             // 意外中断可重启
                             try {
                                 if (DefaultTask.this.startDelay > 0) {
@@ -171,7 +180,7 @@ public abstract class DefaultTask implements Task {
                                     DefaultTask.this.writeLock().unlock();
                                 }
                                 // 执行真正的业务逻辑
-                                if (finalI == 0) {
+                                if (notify.compareAndSet(0, 1)) {
                                     DefaultTask.this.notifyStart();
                                 }
                                 if (!DefaultTask.this.allowConcurrentRun) {
@@ -200,9 +209,14 @@ public abstract class DefaultTask implements Task {
                         }
                     } finally {
                         // 程序结束
-                        DefaultTask.this.finished = true;
-//                        DefaultTask.this.clearStatus();
-                        if (finalI == 0) {
+                        DefaultTask.this.allFinished.set(finalI, true);
+                        boolean temp = true;
+                        for (int i1 = 0; i1 < DefaultTask.this.allFinished.length(); i1++) {
+                            temp = temp && DefaultTask.this.allFinished.get(i1);
+                        }
+                        if (temp && notify.compareAndSet(1, 2)) {
+                            // 所有程序都退出了
+                            DefaultTask.this.clearStatus();
                             DefaultTask.this.notifyStop();
                         }
                     }
@@ -315,6 +329,10 @@ public abstract class DefaultTask implements Task {
                 this.writeLock().lock();
                 try {
                     this.threadSize = threadSize;
+                    this.allFinished = new AtomicReferenceArray<Boolean>(new Boolean[threadSize]);
+                    for (int i = 0; i < this.allFinished.length(); i++) {
+                        this.allFinished.set(i, true);
+                    }
                     this.threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
                     this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
                     this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
@@ -333,6 +351,11 @@ public abstract class DefaultTask implements Task {
     public void clearStatus() {
         this.writeLock().lock();
         try {
+            this.finished = true;
+            this.allFinished = new AtomicReferenceArray<Boolean>(new Boolean[threadSize]);
+            for (int i = 0; i < this.allFinished.length(); i++) {
+                this.allFinished.set(i, true);
+            }
             this.threads = new AtomicReferenceArray<Thread>(new Thread[threadSize]);
             this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
             this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);

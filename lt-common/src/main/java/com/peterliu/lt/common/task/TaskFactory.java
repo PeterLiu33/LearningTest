@@ -27,6 +27,19 @@ public abstract class TaskFactory {
     }
 
     /**
+     * 创建循环任务
+     *
+     * @param threadSize    线程组大小，必须大于0
+     * @param interval      循环间隔，单位毫秒
+     * @param numberOfCycle 循环次数，默认不限制
+     * @param startDelay    启动延时，单位毫秒
+     * @return
+     */
+    public static Task createSelfLoop(int threadSize, int interval, int numberOfCycle, int startDelay) {
+        return new SelfLoopTask(threadSize, interval, numberOfCycle, startDelay);
+    }
+
+    /**
      * 创建一次性任务
      *
      * @param threadSize 线程组大小，必须大于0

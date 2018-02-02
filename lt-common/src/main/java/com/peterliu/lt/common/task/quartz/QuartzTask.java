@@ -13,6 +13,7 @@ import org.quartz.listeners.SchedulerListenerSupport;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.quartz.JobBuilder.newJob;
@@ -30,9 +31,9 @@ public abstract class QuartzTask extends DefaultTask {
     private static final String QUARTZ_TRIGGER_PREFIX = "quartz_trigger_";
 
     // 任务列表
-    public volatile JobDetail jobDetail = null;
-    protected volatile AtomicReferenceArray<Boolean> triggerFinished = new AtomicReferenceArray<Boolean>(new Boolean[threadSize]);
-    protected volatile AtomicReferenceArray<Trigger> trigger = new AtomicReferenceArray<Trigger>(new Trigger[threadSize]);
+    public volatile JobDetail jobDetail;
+    protected volatile AtomicReferenceArray<Boolean> triggerFinished;
+    protected volatile AtomicReferenceArray<Trigger> trigger;
     // 商业节假日期
     private Set<Date> holidaySet = Sets.newHashSet();
     // 调度器
@@ -97,8 +98,12 @@ public abstract class QuartzTask extends DefaultTask {
             //线程还在运行，无法再次启动
             return;
         }
-        this.finished = false;
         this.clearStatus();
+        // 设置启动标志
+        this.finished = false;
+        for (int i = 0; i < this.triggerFinished.length(); i++) {
+            this.triggerFinished.set(i, false);
+        }
         SchedulerFactory schedulerFactory = new SchedulerFactory(this);
         // 创建一个新的scheduler
         this.scheduler = schedulerFactory.newScheduler();
@@ -129,16 +134,26 @@ public abstract class QuartzTask extends DefaultTask {
             }
             // 增加监听器
             scheduler.getListenerManager().addSchedulerListener(new SchedulerListenerSupport() {
+
+                private AtomicInteger notify = new AtomicInteger(0);
+
                 @Override
                 public void schedulerShutdown() {
                     // 调度器关闭
+                    for (int i = 0; i < QuartzTask.this.triggerFinished.length(); i++) {
+                        QuartzTask.this.triggerFinished.set(i, true);
+                    }
                     QuartzTask.this.finished = true;
-                    QuartzTask.this.notifyStop();
+                    if(notify.compareAndSet(1, 2)) {
+                        QuartzTask.this.notifyStop();
+                    }
                 }
 
                 @Override
                 public void schedulerStarted() {
-                    QuartzTask.this.notifyStart();
+                    if(notify.compareAndSet(0, 1)) {
+                        QuartzTask.this.notifyStart();
+                    }
                 }
 
                 @Override
@@ -159,6 +174,9 @@ public abstract class QuartzTask extends DefaultTask {
                         temp = temp && triggerFinished.get(i);
                     }
                     QuartzTask.this.finished = temp;
+                    if(temp && notify.compareAndSet(1, 2)) {
+                        QuartzTask.this.notifyStop();
+                    }
                 }
             });
             // 增加job
@@ -214,7 +232,6 @@ public abstract class QuartzTask extends DefaultTask {
         } catch (Exception e) {
             // 启动失败
             // 程序结束
-            this.finished = true;
             this.clearStatus();
             throw new RuntimeException(String.format("FailToStartQuartzService! task: [%s]", getName()), e);
         }
@@ -284,7 +301,7 @@ public abstract class QuartzTask extends DefaultTask {
                     this.trigger = new AtomicReferenceArray<Trigger>(new Trigger[threadSize]);
                     this.triggerFinished = new AtomicReferenceArray<Boolean>(new Boolean[threadSize]);
                     for (int i = 0; i < this.triggerFinished.length(); i++) {
-                        this.triggerFinished.set(i, false);
+                        this.triggerFinished.set(i, true);
                     }
                     this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
                     this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);
@@ -304,11 +321,12 @@ public abstract class QuartzTask extends DefaultTask {
     public void clearStatus() {
         this.writeLock().lock();
         try {
+            this.finished = true;
             this.jobDetail = null;
             this.trigger = new AtomicReferenceArray<Trigger>(new Trigger[threadSize]);
             this.triggerFinished = new AtomicReferenceArray<Boolean>(new Boolean[threadSize]);
             for (int i = 0; i < this.triggerFinished.length(); i++) {
-                this.triggerFinished.set(i, false);
+                this.triggerFinished.set(i, true);
             }
             this.startTime = new AtomicReferenceArray<Long>(new Long[threadSize]);
             this.status = new AtomicReferenceArray<Thread.State>(new Thread.State[threadSize]);

@@ -24,6 +24,6 @@ public class OneTimeTask extends DefaultTask {
     protected void run(int index) {
         this.runner.run();
         // 结束任务
-        this.finished = true;
+        this.allFinished.set(index, true);
     }
 }
