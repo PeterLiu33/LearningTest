@@ -1,4 +1,4 @@
-package com.peterliu.lt.java.condition;
+package com.peterliu.lt.java.queue;
 
 import java.util.concurrent.TimeUnit;
 

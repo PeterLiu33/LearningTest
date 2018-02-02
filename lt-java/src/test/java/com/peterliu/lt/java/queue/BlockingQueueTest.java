@@ -1,4 +1,4 @@
-package com.peterliu.lt.java.condition;
+package com.peterliu.lt.java.queue;
 
 import com.peterliu.lt.common.DateUtils;
 import com.peterliu.lt.common.task.Task;
