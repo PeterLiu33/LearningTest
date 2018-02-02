@@ -266,6 +266,11 @@ public class ConcurrentArrayBlockingQueue<E> implements BlockingQueue<E> {
         return this.count.get();
     }
 
+    @Override
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     /**
      * 判断是否为空
      *

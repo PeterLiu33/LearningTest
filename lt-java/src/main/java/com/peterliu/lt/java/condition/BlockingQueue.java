@@ -71,4 +71,11 @@ public interface BlockingQueue<E> {
      * @return
      */
     int size();
+
+    /**
+     * 判断是否空
+     *
+     * @return
+     */
+    boolean isEmpty();
 }
