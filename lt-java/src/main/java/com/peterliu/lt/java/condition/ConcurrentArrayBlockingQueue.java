@@ -119,7 +119,7 @@ public class ConcurrentArrayBlockingQueue<E> implements BlockingQueue<E> {
             // 临界：说明之前读线程有可能在等待
             signalNotEmpty();
         }
-        return false;
+        return true;
     }
 
     @Override
