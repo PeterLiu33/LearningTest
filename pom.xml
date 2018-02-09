@@ -17,6 +17,7 @@
         <module>lt-others</module>
         <module>lt-guava</module>
         <module>lt-junit</module>
+        <module>lt-hadoop</module>
     </modules>
 
     <properties>
