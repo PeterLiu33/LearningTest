@@ -1,11 +1,14 @@
 package com.peterliu.lt.java;
 
+import com.peterliu.lt.common.DateUtils;
 import com.peterliu.lt.java.thread.Calculator;
 import org.junit.Test;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.System.*;
+import static java.lang.String.*;
 
 /**
  * 测试Thread线程类
@@ -65,5 +68,38 @@ public class TestThread {
         pw.printf("Main : Old State: %s\n", state);
         pw.printf("Main : New State: %s\n", thread.getState());
         pw.printf("Main : ************************************\n");
+    }
+
+    /**
+     * 关键点：
+     *      1. yield只是把线程从状态running变为runnable
+     *      2. yield并不会释放锁
+     *      3. 一般用于测试，很少用于线上系统
+     * @throws InterruptedException
+     */
+    @Test
+    public void testYield() throws InterruptedException {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                synchronized (TestThread.class) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    out.println(format("starting, name=[%s], time=[%s]", Thread.currentThread().getName(), DateUtils.formatNow(DateUtils.YYYY_MM_DD_HH_MM_SS)));
+                    Thread.yield();
+                    out.println(format("ending, name=[%s], time=[%s]", Thread.currentThread().getName(), DateUtils.formatNow(DateUtils.YYYY_MM_DD_HH_MM_SS)));
+                }
+            }
+        };
+
+        Thread yield1 = new Thread(runnable, "测试1");
+        Thread yield2 = new Thread(runnable, "测试2");
+        yield1.start();
+        yield2.start();
+        yield1.join();
+        yield2.join();
     }
 }
