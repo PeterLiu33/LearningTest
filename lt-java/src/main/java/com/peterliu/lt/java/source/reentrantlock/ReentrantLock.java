@@ -80,7 +80,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
-    abstract static class Sync extends java.util.concurrent.locks.AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**
@@ -112,12 +112,19 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return false;
         }
 
+        /**
+         * 释放锁
+         * @param releases
+         * @return
+         */
         protected final boolean tryRelease(int releases) {
             int c = getState() - releases;
             if (Thread.currentThread() != getExclusiveOwnerThread())
+                // 当前线程并没有获得锁
                 throw new IllegalMonitorStateException();
             boolean free = false;
             if (c == 0) {
+                // 只有等于0时返回true
                 free = true;
                 setExclusiveOwnerThread(null);
             }
@@ -192,8 +199,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
 
         /**
-         * Fair version of tryAcquire.  Don't grant access unless
-         * recursive call or no waiters or is first.
+         * 公平的方式获取锁
          */
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
@@ -202,12 +208,15 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 if (!hasQueuedPredecessors() &&
                         compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
+                    // 首先，判断当前线程释放在类LCH队列中
+                    // 其次，cas的方式设置state值，成功则获取锁
                     return true;
                 }
             }
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0)
+                    // 重入次数不能小于0
                     throw new Error("Maximum lock count exceeded");
                 setState(nextc);
                 return true;
@@ -661,7 +670,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             throw new NullPointerException();
         if (!(condition instanceof java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.hasWaiters((java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.hasWaiters((AbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -684,7 +693,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             throw new NullPointerException();
         if (!(condition instanceof java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitQueueLength((java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitQueueLength((AbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -709,7 +718,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             throw new NullPointerException();
         if (!(condition instanceof java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitingThreads((java.util.concurrent.locks.AbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitingThreads((AbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**
