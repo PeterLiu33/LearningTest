@@ -6,6 +6,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
+ * MCS队列锁（自旋锁，单向链表next，自旋在自己节点，设置next节点false）
+ *
+ * 缺点：
+ * 优点是适用于NUMA系统架构，缺点是释放锁也需要自旋等待，且比CLH读、写、CAS等操作调用次数多。
  * Created by liujun on 2018/3/6.
  */
 public class MCSLock implements Lock {
