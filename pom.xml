@@ -18,6 +18,8 @@
         <module>lt-guava</module>
         <module>lt-junit</module>
         <module>lt-hadoop</module>
+        <module>lt-storm</module>
+        <module>lt-redis</module>
     </modules>
 
     <properties>
