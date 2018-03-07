@@ -48,7 +48,7 @@ public class SelfLoopTask extends DefaultTask {
     @Override
     protected void run(int index) {
         int cycleTimes = this.numberOfCycle;
-        while (!this.isFinished()) {
+        while (!this.isFinished() && !isJobInterrupted()) {
             // 计数到了或者被中断了
             if (this.timeOut > 0) {
                 if (System.currentTimeMillis() - this.startTime.get(index) > this.timeOut) {

@@ -5,6 +5,7 @@ import com.peterliu.lt.common.Asserts;
 import com.peterliu.lt.common.task.Task;
 import com.peterliu.lt.common.task.TaskListener;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.channels.ClosedByInterruptException;
@@ -32,6 +33,10 @@ public abstract class DefaultTask implements Task {
     // 结束标志位，true-结束
     @Getter
     protected volatile boolean finished = true;
+    // 任务是否被终止
+    @Setter
+    @Getter
+    protected volatile boolean jobInterrupted = false;
     // 针对每一个线程的状态
     protected volatile AtomicReferenceArray<Boolean> allFinished;
     // 任务超时时间，如果小于等于0，则无超时，超时会自动中断
@@ -153,6 +158,7 @@ public abstract class DefaultTask implements Task {
         this.clearStatus();
         // 设置启动状态
         this.finished = false;
+        this.jobInterrupted = false;
         for (int i = 0; i < this.allFinished.length(); i++) {
             this.allFinished.set(i, false);
         }
@@ -165,7 +171,7 @@ public abstract class DefaultTask implements Task {
                 @Override
                 public void run() {
                     try {
-                        while (!DefaultTask.this.allFinished.get(finalI)) {
+                        while (!DefaultTask.this.allFinished.get(finalI) && !jobInterrupted) {
                             // 意外中断可重启
                             try {
                                 if (DefaultTask.this.startDelay > 0) {
@@ -245,6 +251,8 @@ public abstract class DefaultTask implements Task {
                 Thread thread = this.getThread(i);
                 if (thread != null) {
                     try {
+                        // 设置中断标志位
+                        this.jobInterrupted = true;
                         thread.interrupt();
                         log.info(String.format("ThreadHasForceShutDown, Thread-Name:[%s]", thread.getName()));
                     } catch (Exception e) {
@@ -378,6 +386,11 @@ public abstract class DefaultTask implements Task {
         } finally {
             readLock().unlock();
         }
+    }
+
+    @Override
+    public boolean isInterrupted() {
+        return this.isJobInterrupted();
     }
 
     protected void notifyStart() {

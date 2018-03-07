@@ -60,7 +60,7 @@ public abstract class TaskLauncher {
      * @param task
      * @return
      */
-    public static boolean shutDown(Task task){
+    public static boolean shutDown(Task task) {
         Asserts.isTrue(task instanceof DefaultTask, "Task Should Be InstanceOf Class DefaultTask");
         ((DefaultTask) task).end();
         return true;
@@ -78,7 +78,9 @@ public abstract class TaskLauncher {
         DefaultTask defaultTask = (DefaultTask) task;
         for (int i = 0; i < defaultTask.getThreadSize(); i++) {
             Thread thread = defaultTask.getThread(i);
-            if(thread == null) {continue;}
+            if (thread == null) {
+                continue;
+            }
             thread.join();
         }
     }
@@ -123,7 +125,7 @@ public abstract class TaskLauncher {
             }
         }, true);
         //启动任务
-        ((DefaultTask)task).start();
+        ((DefaultTask) task).start();
     }
 
 

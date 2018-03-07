@@ -4,6 +4,8 @@ import com.google.common.collect.Sets;
 import com.peterliu.lt.common.Asserts;
 import com.peterliu.lt.common.task.Task;
 import com.peterliu.lt.common.task.simple.DefaultTask;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.*;
@@ -13,6 +15,7 @@ import org.quartz.listeners.SchedulerListenerSupport;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Date;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -65,7 +68,7 @@ public abstract class QuartzTask extends DefaultTask {
 
     @Override
     protected void run(int index) {
-        while (true) {
+        while (true && !this.jobInterrupted) {
             // 意外中断可重启
             try {
                 // 执行真正的业务逻辑
@@ -101,6 +104,7 @@ public abstract class QuartzTask extends DefaultTask {
         this.clearStatus();
         // 设置启动标志
         this.finished = false;
+        this.jobInterrupted = false;
         for (int i = 0; i < this.triggerFinished.length(); i++) {
             this.triggerFinished.set(i, false);
         }
@@ -243,6 +247,14 @@ public abstract class QuartzTask extends DefaultTask {
         boolean runStatus = true;
         this.readLock().lock();
         try {
+            for (int i = 0; i < this.trigger.length(); i++) {
+                Trigger trigger = this.getTrigger(0);
+                if(trigger == null){
+                    continue;
+                }
+                // 中断当前正在运行的job
+                this.scheduler.interrupt(trigger.getJobKey());
+            }
             this.scheduler.shutdown();
             runStatus = this.scheduler.isShutdown();
             log.info(String.format("QuartzSchedulerHasForceShutDown, Name:[%s]", this.scheduler.getSchedulerName()));

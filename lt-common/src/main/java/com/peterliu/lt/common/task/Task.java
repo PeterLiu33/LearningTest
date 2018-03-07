@@ -118,4 +118,11 @@ public interface Task {
      * @param listener
      */
     void addListener(TaskListener listener);
+
+    /**
+     * 判断job是否被终止
+     *
+     * @return
+     */
+    boolean isInterrupted();
 }

@@ -10,7 +10,7 @@ import org.quartz.*;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class NonConcurrentQJob implements Job {
+public class NonConcurrentQJob implements InterruptableJob {
 
     @Setter
     private QuartzTask task;
@@ -25,5 +25,10 @@ public class NonConcurrentQJob implements Job {
         }else{
             task.run(0);
         }
+    }
+
+    @Override
+    public void interrupt() throws UnableToInterruptJobException {
+        this.task.setJobInterrupted(true);
     }
 }

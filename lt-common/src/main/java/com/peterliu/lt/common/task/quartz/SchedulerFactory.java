@@ -37,6 +37,7 @@ public class SchedulerFactory {
         props = new Properties();
         props.setProperty("org.quartz.threadPool.threadCount", String.valueOf(task.getThreadSize()));
         props.setProperty("org.quartz.jobStore.class", "org.quartz.simpl.RAMJobStore");
+        props.setProperty("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
     }
 
     /**

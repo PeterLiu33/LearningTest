@@ -2,17 +2,14 @@ package com.peterliu.lt.common.task.quartz;
 
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.PersistJobDataAfterExecution;
+import org.quartz.*;
 
 /**
  * 允许并发的job, qz会并发调用
  * Created by liujun on 2018/1/27.
  */
 @PersistJobDataAfterExecution
-public class ConcurrentQJob  implements Job {
+public class ConcurrentQJob  implements InterruptableJob {
 
     @Setter
     private QuartzTask task;
@@ -27,5 +24,10 @@ public class ConcurrentQJob  implements Job {
         }else{
             task.run(0);
         }
+    }
+
+    @Override
+    public void interrupt() throws UnableToInterruptJobException {
+        this.task.setJobInterrupted(true);
     }
 }
