@@ -20,6 +20,7 @@
         <module>lt-hadoop</module>
         <module>lt-storm</module>
         <module>lt-redis</module>
+        <module>lt-protobuf</module>
     </modules>
 
     <properties>
