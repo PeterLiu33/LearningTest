@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public abstract class DefaultTask implements Task {
 
     @Getter
-    protected String name = this.getClass().getSimpleName();
+    protected String name = this.getClass().getSimpleName() + System.currentTimeMillis();
     // 任务启动线程数, 默认一个
     @Getter
     protected volatile int threadSize = -1;
@@ -281,7 +281,7 @@ public abstract class DefaultTask implements Task {
      * @param name
      */
     protected void setName(String name) {
-        this.name = name;
+        this.name = name + System.currentTimeMillis();
     }
 
     /**
