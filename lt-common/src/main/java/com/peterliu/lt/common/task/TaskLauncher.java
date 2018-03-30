@@ -36,6 +36,18 @@ public abstract class TaskLauncher {
     }
 
     /**
+     * 直接运行
+     *
+     * @param task
+     */
+    public static void directRun(Task task){
+        Asserts.isTrue(task instanceof DefaultTask, "Task Should Be InstanceOf Class DefaultTask");
+        DefaultTask defaultTask = (DefaultTask) task;
+        Asserts.isNotBlank(defaultTask.runner, "This is an empty task!");
+        defaultTask.runner.run();
+    }
+
+    /**
      * 强制中断线程组
      *
      * @param task
