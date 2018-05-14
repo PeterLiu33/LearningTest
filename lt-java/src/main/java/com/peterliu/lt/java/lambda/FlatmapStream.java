@@ -2,12 +2,11 @@ package com.peterliu.lt.java.lambda;
 
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -25,6 +24,9 @@ public class FlatmapStream {
         System.out.println(StringUtils.join(collect, ","));
         stream = Arrays.stream(test);
         Set<String> stringSet = stream.map(x -> x.split("")).flatMap(Arrays::stream).collect(toSet());
+        System.out.println(StringUtils.join(stringSet, ","));
+        stream = Arrays.stream(test);
+        stringSet = stream.map(x -> x.split("")).flatMap(Arrays::stream).collect(toCollection(LinkedHashSet::new));
         System.out.println(StringUtils.join(stringSet, ","));
 
         // 这是因为IntStream 中的map方法只能为流中的每个元素返回另一个int
@@ -45,6 +47,8 @@ public class FlatmapStream {
                         )
                         .collect(toList());
         System.out.println(StringUtils.join(pairs, ","));
+        long ab = 1_000;
+        System.out.println(ab);
 
     }
 }
