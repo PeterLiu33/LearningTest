@@ -39,7 +39,7 @@ public interface Logger {
         log(Level.info, logMsg);
     }
 
-    default void info(String msg) {
+    default void info(Object msg) {
         log(Level.info, msg);
     }
 
@@ -93,7 +93,7 @@ public interface Logger {
         log(Level.warn, logMsg);
     }
 
-    default void warn(String msg) {
+    default void warn(Object msg) {
         log(Level.warn, msg);
     }
 
@@ -147,7 +147,7 @@ public interface Logger {
         log(Level.debug, logMsg);
     }
 
-    default void debug(String msg) {
+    default void debug(Object msg) {
         log(Level.debug, msg);
     }
 
@@ -201,7 +201,7 @@ public interface Logger {
         log(Level.error, logMsg);
     }
 
-    default void error(String msg) {
+    default void error(Object msg) {
         log(Level.error, msg);
     }
 
@@ -255,7 +255,7 @@ public interface Logger {
         log(Level.trace, logMsg);
     }
 
-    default void trace(String msg) {
+    default void trace(Object msg) {
         log(Level.trace, msg);
     }
 
@@ -284,6 +284,7 @@ public interface Logger {
     }
 
     //core:--------------------------------------------------------
+
     default void log(Level level, Throwable e) {
         log(level, e, () -> "");
     }
@@ -308,8 +309,8 @@ public interface Logger {
         log(level, logMsg, Optional.empty());
     }
 
-    default void log(Level level, String msg) {
-        log(level, () -> msg, Optional.empty());
+    default void log(Level level, Object msg) {
+        log(level, () -> String.valueOf(msg), Optional.empty());
     }
 
     default void log(Level level, Supplier<String> logMsg, Throwable e) {

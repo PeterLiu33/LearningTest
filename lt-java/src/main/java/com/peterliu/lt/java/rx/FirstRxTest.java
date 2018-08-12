@@ -5,7 +5,6 @@ import com.peterliu.lt.common.LocalLoggerFactory;
 import com.peterliu.lt.common.Logger;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 
 import java.io.IOException;
@@ -40,6 +39,10 @@ public class FirstRxTest {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.single())
                 .subscribe(System.out::println, logger::error);
-        System.in.read();
+
+
+        Flowable.range(1, 10).observeOn(Schedulers.computation()).map(v -> v * v).blockingSubscribe(logger::info);
+        Flowable.range(1, 10).flatMap(v -> Flowable.just(v).subscribeOn(Schedulers.computation()).map(w -> w * w)).blockingSubscribe(logger::info);
+
     }
 }
