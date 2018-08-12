@@ -20,5 +20,9 @@
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper-test</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peterliu.demo</groupId>
+            <artifactId>lt-common</artifactId>
+        </dependency>
     </dependencies>
 </project>

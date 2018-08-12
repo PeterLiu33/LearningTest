@@ -12,6 +12,9 @@
     <artifactId>lt-java</artifactId>
 
     <dependencies>
-
+        <dependency>
+            <groupId>com.peterliu.demo</groupId>
+            <artifactId>lt-common</artifactId>
+        </dependency>
     </dependencies>
 </project>
