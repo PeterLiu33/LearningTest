@@ -16,5 +16,9 @@
             <groupId>com.peterliu.demo</groupId>
             <artifactId>lt-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+        </dependency>
     </dependencies>
 </project>
