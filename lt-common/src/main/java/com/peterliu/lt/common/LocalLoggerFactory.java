@@ -49,6 +49,8 @@ public abstract class LocalLoggerFactory {
                     case error:
                         printStream = System.err;
                         break;
+                    default:
+                        return;
 
                 }
                 if (eOpt.isPresent()) {

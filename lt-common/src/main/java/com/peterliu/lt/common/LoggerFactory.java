@@ -82,6 +82,8 @@ public abstract class LoggerFactory {
                             }
                         }
                         break;
+                    default:
+                        return;
                 }
             }
         };
