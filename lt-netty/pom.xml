@@ -11,5 +11,14 @@
 
     <artifactId>lt-netty</artifactId>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+        </dependency>
+    </dependencies>
 </project>

@@ -5,6 +5,9 @@ import com.peterliu.lt.common.LocalLoggerFactory;
 import com.peterliu.lt.common.Logger;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.schedulers.Schedulers;
 
 import java.io.IOException;
@@ -40,9 +43,22 @@ public class FirstRxTest {
                 .observeOn(Schedulers.single())
                 .subscribe(System.out::println, logger::error);
 
-
         Flowable.range(1, 10).observeOn(Schedulers.computation()).map(v -> v * v).blockingSubscribe(logger::info);
         Flowable.range(1, 10).flatMap(v -> Flowable.just(v).subscribeOn(Schedulers.computation()).map(w -> w * w)).blockingSubscribe(logger::info);
+
+        Observable.create((ObservableEmitter<String> emitter) -> {
+            logger.info(Thread.currentThread().getName());
+            for (int i = 0; i < 10; i++) {
+                emitter.onNext("hello");
+                logger.info(() -> "newThread（） 发送" + Thread.currentThread().getName());
+            }
+        })
+                .subscribeOn(Schedulers.newThread())
+                .blockingSubscribe((s) -> {
+                            logger.info(() -> "newThread（） 接收" + Thread.currentThread().getName());
+                            logger.info(s);
+                        }
+                );
 
     }
 }
