@@ -63,9 +63,9 @@ public interface Logger {
         log(Level.info, e, args);
     }
 
-    default void info(Throwable e, String... args) {
-        log(Level.info, e, args);
-    }
+//    default void info(Throwable e, String... args) {
+//        log(Level.info, e, args);
+//    }
 
     //warn:--------------------------------------------------------
 
@@ -117,9 +117,9 @@ public interface Logger {
         log(Level.warn, e, args);
     }
 
-    default void warn(Throwable e, String... args) {
-        log(Level.warn, e, args);
-    }
+//    default void warn(Throwable e, String... args) {
+//        log(Level.warn, e, args);
+//    }
 
     //debug:--------------------------------------------------------
 
@@ -171,9 +171,9 @@ public interface Logger {
         log(Level.debug, e, args);
     }
 
-    default void debug(Throwable e, String... args) {
-        log(Level.debug, e, args);
-    }
+//    default void debug(Throwable e, String... args) {
+//        log(Level.debug, e, args);
+//    }
 
     //error:--------------------------------------------------------
 
@@ -225,9 +225,9 @@ public interface Logger {
         log(Level.error, e, args);
     }
 
-    default void error(Throwable e, String... args) {
-        log(Level.error, e, args);
-    }
+//    default void error(Throwable e, String... args) {
+//        log(Level.error, e, args);
+//    }
 
     //trace:--------------------------------------------------------
 
@@ -279,9 +279,9 @@ public interface Logger {
         log(Level.trace, e, args);
     }
 
-    default void trace(Throwable e, String... args) {
-        log(Level.trace, e, args);
-    }
+//    default void trace(Throwable e, String... args) {
+//        log(Level.trace, e, args);
+//    }
 
     //core:--------------------------------------------------------
 
