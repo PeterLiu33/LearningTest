@@ -41,6 +41,8 @@ public class AESCryptographer {
 
     private final EncryptModel encryptModel;
 
+    private String cipherMode;
+
     // key值大小
     private static final int Secret_Key_Size = 16;
 
@@ -53,6 +55,7 @@ public class AESCryptographer {
             throw new NoSuchAlgorithmException("加密模式不能为空!");
         }
         this.encryptModel = encryptModel;
+        this.cipherMode = getCipherMode();
         // 初始化AES专用秘钥
         initNewKeyForAES();
     }
@@ -161,7 +164,7 @@ public class AESCryptographer {
                 return Optional.empty();
             }
             // 创建密码器
-            Cipher cipher = Cipher.getInstance(getCipherMode());
+            Cipher cipher = Cipher.getInstance(cipherMode);
             // 初始化为加密模式的密码器
             switch (encryptModel){
                 case CBC:
@@ -199,7 +202,7 @@ public class AESCryptographer {
                 return Optional.empty();
             }
             // 创建密码器
-            Cipher cipher = Cipher.getInstance(getCipherMode());
+            Cipher cipher = Cipher.getInstance(cipherMode);
             // 初始化为解密模式的密码器
             switch (encryptModel){
                 case CBC:
