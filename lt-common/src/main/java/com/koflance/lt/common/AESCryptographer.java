@@ -122,7 +122,7 @@ public class AESCryptographer {
         return String.format(Cipher_Mode, encryptModel.name());
     }
 
-    public Optional<String> encrypt(String rawContent, OutputModel model) {
+    public Optional<String> encrypt(String rawContent, OutputFormat model) {
         Optional<String> signatureOpt = MD5Utils.getSignature(rawContent, salt);
         if (!signatureOpt.isPresent()) {
             return Optional.empty();
@@ -131,7 +131,7 @@ public class AESCryptographer {
         return doAesEncrypt(value, model);
     }
 
-    public Optional<String> decrypt(String encryptedContent, OutputModel model) {
+    public Optional<String> decrypt(String encryptedContent, OutputFormat model) {
         if (StringUtils.isBlank(encryptedContent)) {
             return Optional.empty();
         }
@@ -158,7 +158,7 @@ public class AESCryptographer {
         return Optional.empty();
     }
 
-    private Optional<String> doAesEncrypt(String rawContent, OutputModel model) {
+    private Optional<String> doAesEncrypt(String rawContent, OutputFormat model) {
         try {
             if (model == null) {
                 return Optional.empty();
@@ -190,15 +190,15 @@ public class AESCryptographer {
         return Optional.empty();
     }
 
-    private Optional<String> doAesDecrypt(String encryptedContent, OutputModel model) {
+    private Optional<String> doAesDecrypt(String encryptedContent, OutputFormat model) {
         try {
             if (model == null) {
                 return Optional.empty();
             }
-            if (model == OutputModel.HEX && !MD5Utils.isHex(encryptedContent)) {
+            if (model == OutputFormat.HEX && !MD5Utils.isHex(encryptedContent)) {
                 return Optional.empty();
             }
-            if (model == OutputModel.BASE64 && !Base64.isBase64(encryptedContent)) {
+            if (model == OutputFormat.BASE64 && !Base64.isBase64(encryptedContent)) {
                 return Optional.empty();
             }
             // 创建密码器
@@ -230,7 +230,7 @@ public class AESCryptographer {
     /**
      * 密文输出格式
      */
-    public enum OutputModel {
+    public enum OutputFormat {
         BASE64, HEX
     }
 

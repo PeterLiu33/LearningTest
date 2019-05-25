@@ -23,13 +23,13 @@ public class AESCryptographerTest {
         String rawContent = "我是123456.12121abc";
         long l = System.currentTimeMillis();
         IntStream.range(0, 1000000).forEach(x -> {
-            Optional<String> encrypt = aesCryptographer.encrypt(rawContent, AESCryptographer.OutputModel.BASE64);
+            Optional<String> encrypt = aesCryptographer.encrypt(rawContent, AESCryptographer.OutputFormat.BASE64);
             if (!encrypt.isPresent()) {
                 System.out.println("error!");
                 return;
             }
             String encryptedContent = encrypt.get();
-            Optional<String> decrypt = aesCryptographer2.decrypt(encryptedContent, AESCryptographer.OutputModel.BASE64);
+            Optional<String> decrypt = aesCryptographer2.decrypt(encryptedContent, AESCryptographer.OutputFormat.BASE64);
             if (!decrypt.isPresent()) {
                 System.out.println("error2!");
                 return;
@@ -38,13 +38,13 @@ public class AESCryptographerTest {
         System.out.println(System.currentTimeMillis() - l);
         l = System.currentTimeMillis();
         IntStream.range(0, 1000000).forEach(x -> {
-            Optional<String> encrypt = aesCryptographer.encrypt(rawContent, AESCryptographer.OutputModel.HEX);
+            Optional<String> encrypt = aesCryptographer.encrypt(rawContent, AESCryptographer.OutputFormat.HEX);
             if (!encrypt.isPresent()) {
                 System.out.println("error!");
                 return;
             }
             String encryptedContent = encrypt.get();
-            Optional<String> decrypt = aesCryptographer2.decrypt(encryptedContent, AESCryptographer.OutputModel.HEX);
+            Optional<String> decrypt = aesCryptographer2.decrypt(encryptedContent, AESCryptographer.OutputFormat.HEX);
             if (!decrypt.isPresent()) {
                 System.out.println("error2!");
                 return;
@@ -60,11 +60,11 @@ public class AESCryptographerTest {
         AESCryptographer encoder = new AESCryptographer("password", "salt", AESCryptographer.EncryptModel.CBC);
         AESCryptographer decoder = new AESCryptographer("password", "salt", AESCryptographer.EncryptModel.CBC);
         String rawContent = "我是123456.12121abc";
-        Optional<String> encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputModel.BASE64);
+        Optional<String> encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputFormat.BASE64);
         if (encrypt.isPresent()) {
             String encryptedContent = encrypt.get();
             System.out.println(encryptedContent);
-            Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputModel.BASE64);
+            Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputFormat.BASE64);
             if (decrypt.isPresent()) {
                 System.out.println(decrypt.get());
                 Assert.assertEquals(decrypt.get(), rawContent);
@@ -74,11 +74,11 @@ public class AESCryptographerTest {
 
         }
 
-        encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputModel.HEX);
+        encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputFormat.HEX);
         if (encrypt.isPresent()) {
             String encryptedContent = encrypt.get();
             System.out.println(encryptedContent);
-            Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputModel.HEX);
+            Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputFormat.HEX);
             if (decrypt.isPresent()) {
                 System.out.println(decrypt.get());
                 Assert.assertEquals(decrypt.get(), rawContent);
@@ -92,7 +92,7 @@ public class AESCryptographerTest {
     public void test3() throws NoSuchAlgorithmException {
         AESCryptographer aesCryptographer = new AESCryptographer("password", "salt", AESCryptographer.EncryptModel.CBC);
         String hexString = "fa4639de31bc8a838eb3e3a0cde79481bd5e8e388702ec86edcdaa9958d1d3f0a44990b62d282a844bb85517dfcc58b3a0d9a3a59b3dd46fad2502b1fc37b1cb";
-        Optional<String> decrypt = aesCryptographer.decrypt(hexString, AESCryptographer.OutputModel.BASE64);
+        Optional<String> decrypt = aesCryptographer.decrypt(hexString, AESCryptographer.OutputFormat.BASE64);
         if (decrypt.isPresent()) {
             System.out.println(decrypt.get());
         } else {
@@ -105,9 +105,9 @@ public class AESCryptographerTest {
         AESCryptographer fake = new AESCryptographer("password", "fake", AESCryptographer.EncryptModel.CBC);
         AESCryptographer aesCryptographer = new AESCryptographer("password", "salt", AESCryptographer.EncryptModel.CBC);
         String fakeValue = "我是伪造的";
-        Optional<String> encrypt = fake.encrypt(fakeValue, AESCryptographer.OutputModel.BASE64);
+        Optional<String> encrypt = fake.encrypt(fakeValue, AESCryptographer.OutputFormat.BASE64);
         if(encrypt.isPresent()){
-            Optional<String> decrypt = aesCryptographer.decrypt(encrypt.get(), AESCryptographer.OutputModel.BASE64);
+            Optional<String> decrypt = aesCryptographer.decrypt(encrypt.get(), AESCryptographer.OutputFormat.BASE64);
             if(decrypt.isPresent()){
                 Assert.assertEquals(decrypt.get(), fakeValue);
             } else {
@@ -125,11 +125,11 @@ public class AESCryptographerTest {
         long l = System.currentTimeMillis();
         List<Thread> collect = IntStream.range(0, 2000).mapToObj(x -> new Thread(() -> {
             String rawContent = "我是123456.12121abc";
-            Optional<String> encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputModel.BASE64);
+            Optional<String> encrypt = encoder.encrypt(rawContent, AESCryptographer.OutputFormat.BASE64);
             if (encrypt.isPresent()) {
                 String encryptedContent = encrypt.get();
 //                System.out.println(encryptedContent);
-                Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputModel.BASE64);
+                Optional<String> decrypt = decoder.decrypt(encryptedContent, AESCryptographer.OutputFormat.BASE64);
                 if (decrypt.isPresent()) {
 //                    System.out.println(decrypt.get());
                     Assert.assertEquals(decrypt.get(), rawContent);
