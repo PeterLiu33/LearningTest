@@ -1,11 +1,9 @@
 package com.koflance.lt.common;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -125,6 +123,14 @@ public class AssistTools {
             return "";
         }
         return (String) targets.stream().filter(notEmpty).map(String::valueOf).collect(Collectors.joining(",", "[", "]"));
+    }
+
+    public static void main(String[] args) {
+        String collect = Sets.<String>newHashSet().stream().collect(Collectors.joining(","));
+        System.out.println( collect);
+        collect = null;
+        System.out.println( collect);
+        System.out.println("==>" + collect);
     }
 
 }
