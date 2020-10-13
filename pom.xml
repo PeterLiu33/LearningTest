@@ -33,7 +33,7 @@
         <spring-boot.version>1.4.3.RELEASE</spring-boot.version>
         <pandora-boot.version>2_15_170323</pandora-boot.version>
         <spring-test.version>4.3.2.RELEASE</spring-test.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <maven-antrun.version>1.8</maven-antrun.version>
         <pandora-boot-maven-plugin.version>2.1.6.2</pandora-boot-maven-plugin.version>
     </properties>
